@@ -15,10 +15,10 @@ bot_chatID = os.environ.get("chat_id")
 with open("words.json") as f:
     flashcards = json.load(f)
 
-
+print(type(flashcards))
 # Function for randomly selecting a flashcard to repeat
 def choose_flashcard():
-    return random.choice(list(flashcards.keys()))
+    return random.choice(flashcards)
 
 
 # Function for sending a flashcard to repeat via Telegram
@@ -53,6 +53,7 @@ def check_answer(bot, chat_id, flashcard):
         answer = f.read()
     if answer.lower() == "exit":
         os.remove("answer.txt")
+        bot.sendMessage(chat_id, "The End")
         sys.exit()
     result = prompt_to_chat_gpt(answer=answer, word=flashcard, choose_chat_gpt=0).strip()
     if "." in result:
