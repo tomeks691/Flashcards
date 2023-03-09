@@ -18,11 +18,11 @@ chat_id=<YOUR_TELEGRAM_CHAT_ID>
 4. Create a file called `words.json` and add your flashcards as follows:
 
 ```
-{
-"foreign_word_1": "",
-"foreign_word_2": "",
+[
+"foreign_word_1",
+"foreign_word_2",
 ...
-}
+]
 ```
 
 5. Run the bot by running `python main.py`.
