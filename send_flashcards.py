@@ -11,11 +11,13 @@ import os
 load_dotenv(find_dotenv())
 bot_token = os.environ.get("api_bot")
 bot_chatID = os.environ.get("chat_id")
-# List of flashcards
-with open("words.json") as f:
-    flashcards = json.load(f)
+word_lists = {"1": "Time Travel"}
+
+
 # Function for randomly selecting a flashcard to repeat
-def choose_flashcard():
+def choose_flashcard(wordlist):
+    with open(f"{wordlist}.json") as f:
+        flashcards = json.load(f)
     return random.choice(flashcards)
 
 
@@ -66,14 +68,37 @@ def check_answer(bot, chat_id, flashcard):
     os.remove("answer.txt")
 
 
+def choose_wordlist(bot):
+    while True:
+        bot.sendMessage(bot_chatID, "Which word list do you wanna use?")
+        msg = ""
+        for option, wordlist in word_lists.items():
+            msg += f"{option}: {wordlist}\n"
+        bot.sendMessage(bot_chatID, msg)
+        while True:
+            if os.path.isfile('answer.txt'):
+                with open("answer.txt") as f:
+                    answer = f.read()
+                    os.remove("answer.txt")
+                break
+            else:
+                time.sleep(2)
+                continue
+        if word_lists.get(answer) is not None:
+            break
+        else:
+            print("This dictionary not exists! Choose again.")
+    return answer
+
+
 # Main program loop
 def main():
     # Create a Telepot bot object
     bot = telepot.Bot(bot_token)
-
+    wordlists_key = choose_wordlist(bot)
     # Loop for repeating flashcards
     while True:
-        flashcard = choose_flashcard()
+        flashcard = choose_flashcard(word_lists[wordlists_key])
         repeat_flashcard(bot, bot_chatID, flashcard)
         # Wait for user answer
         while True:
