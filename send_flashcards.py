@@ -18,8 +18,17 @@ word_lists = {"1": "Time Travel"}
 def choose_flashcard(wordlist):
     with open(f"{wordlist}.json") as f:
         flashcards = json.load(f)
-    return random.choice(flashcards)
-
+    if 0 not in flashcards.values():
+        for key in flashcards:
+            flashcards[key] = 0
+    with open(f"{wordlist}.json", "w") as f:
+        json.dump(flashcards, f, indent=4)
+    while True:
+        flashcard = random.choice(list(flashcards.keys()))
+        if flashcards[flashcard] == 0:
+            return flashcard
+        else:
+            continue
 
 # Function for sending a flashcard to repeat via Telegram
 def repeat_flashcard(bot, chat_id, flashcard):
@@ -48,7 +57,9 @@ def prompt_to_chat_gpt(answer="", word="", choose_chat_gpt=0):
 
 
 # Function for checking the correctness of the answer and sending the appropriate message via Telegram
-def check_answer(bot, chat_id, flashcard):
+def check_answer(bot, chat_id, flashcard, wordlist):
+    with open(f"{wordlist}.json") as f:
+        flashcards = json.load(f)
     with open("answer.txt") as f:
         answer = f.read()
     if answer.lower() == "exit":
@@ -62,6 +73,9 @@ def check_answer(bot, chat_id, flashcard):
         f.write(f"{result}\n")
     if result == "True":
         bot.sendMessage(chat_id, "Correct answer!")
+        flashcards[flashcard] += 1
+        with open(f"{wordlist}.json", "w") as f:
+            json.dump(flashcards, f, indent=4)
     elif result == "False":
         correct_answer = prompt_to_chat_gpt(word=flashcard, choose_chat_gpt=1).strip()
         bot.sendMessage(chat_id, f"Incorrect answer. The correct answer is: \n {correct_answer}")
@@ -96,14 +110,15 @@ def main():
     # Create a Telepot bot object
     bot = telepot.Bot(bot_token)
     wordlists_key = choose_wordlist(bot)
+    wordlist = word_lists[wordlists_key]
     # Loop for repeating flashcards
     while True:
-        flashcard = choose_flashcard(word_lists[wordlists_key])
+        flashcard = choose_flashcard(wordlist)
         repeat_flashcard(bot, bot_chatID, flashcard)
         # Wait for user answer
         while True:
             if os.path.isfile('answer.txt'):
-                check_answer(bot, bot_chatID, flashcard)
+                check_answer(bot, bot_chatID, flashcard, wordlist)
                 break
             else:
                 time.sleep(2)
