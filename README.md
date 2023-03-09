@@ -55,4 +55,3 @@ api_auth=<YOUR_OPENAI_API_KEY>
 ## TO-DO
 - Remove words from flashcards
 - Create a PDF of words for studying
-- Prevent duplicates from being sent during a single study session unless an incorrect answer is given
