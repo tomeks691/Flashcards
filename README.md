@@ -15,7 +15,7 @@ api_bot=<YOUR_TELEGRAM_BOT_API_TOKEN>
 chat_id=<YOUR_TELEGRAM_CHAT_ID>
 ```
 
-4. Create a file called `words.json` and add your flashcards as follows:
+4. Create a file called `your_wordlist_name.json` and add your flashcards as follows:
 
 ```
 [
