@@ -7,7 +7,7 @@ This is a Telegram bot that helps you memorize foreign language vocabulary using
 To use this bot, you need to do the following:
 
 1. Create a Telegram bot by following the instructions [here](https://core.telegram.org/bots#3-how-do-i-create-a-bot).
-2. Install the required dependencies by running `pip install -r requirements.txt`.
+2. Install the required dependencies.
 3. Create a file called `.env` and add your Telegram bot API token and chat ID as follows:
 
 ```
@@ -45,3 +45,10 @@ To use your OpenAI API key with this bot, add the following lines to your `.env`
 organization=<YOUR_OPENAI_ORGANIZATION_ID>
 api_auth=<YOUR_OPENAI_API_KEY>
 ```
+## Requirements
+- Python 3.6 or later
+- Telepot
+- OpenAI API key
+- Python-dotenv
+- JSON file containing flashcards
+
