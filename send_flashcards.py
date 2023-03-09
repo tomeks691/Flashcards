@@ -14,21 +14,59 @@ bot_chatID = os.environ.get("chat_id")
 word_lists = {"1": "Time Travel"}
 
 
+def check_if_enough_practice(wordlist):
+    with open(f"{wordlist} Count Correct Answers.json") as f:
+        flashcards = json.load(f)
+    with open(f"{wordlist}.json") as f:
+        flashcards_main = json.load(f)
+    key_to_delete = []
+    been_deleted = False
+    for key in flashcards:
+        if flashcards[key] == 10:
+            been_deleted = True
+            key_to_delete.append(key)
+    for key in key_to_delete:
+        del flashcards[key]
+        del flashcards_main[key]
+    with open(f"{wordlist} Count Correct Answers.json", "w") as f:
+        json.dump(flashcards, f, indent=4)
+    with open(f"{wordlist}.json", "w") as f:
+        json.dump(flashcards_main, f, indent=4)
+    return been_deleted
+
+
 # Function for randomly selecting a flashcard to repeat
-def choose_flashcard(wordlist):
+def check_if_learned(wordlist):
     with open(f"{wordlist}.json") as f:
         flashcards = json.load(f)
+    if 0 in flashcards.values(): return False
+    with open(f"{wordlist} Count Correct Answers.json") as f:
+        flashcards_from_file_count = json.load(f)
+    for flashcard_in_count_file in flashcards_from_file_count:
+        for flashcard_in_main_file in flashcards:
+            if flashcard_in_count_file == flashcard_in_main_file:
+                flashcards_from_file_count[flashcard_in_count_file] += flashcards[flashcard_in_main_file]
     if 0 not in flashcards.values():
         for key in flashcards:
             flashcards[key] = 0
     with open(f"{wordlist}.json", "w") as f:
         json.dump(flashcards, f, indent=4)
+
+
+def choose_flashcard(wordlist, bot):
+    check_if_learned(wordlist)
+    with open(f"{wordlist}.json") as f:
+        flashcards = json.load(f)
+    if len(flashcards) == 0:
+        bot.sendMessage(bot_chatID, "Add some words to wordlist.")
+        sys.exit()
     while True:
         flashcard = random.choice(list(flashcards.keys()))
         if flashcards[flashcard] == 0:
             return flashcard
         else:
             continue
+
 
 # Function for sending a flashcard to repeat via Telegram
 def repeat_flashcard(bot, chat_id, flashcard):
@@ -111,9 +149,10 @@ def main():
     bot = telepot.Bot(bot_token)
     wordlists_key = choose_wordlist(bot)
     wordlist = word_lists[wordlists_key]
+    check_if_enough_practice(wordlist)
     # Loop for repeating flashcards
     while True:
-        flashcard = choose_flashcard(wordlist)
+        flashcard = choose_flashcard(wordlist, bot)
         repeat_flashcard(bot, bot_chatID, flashcard)
         # Wait for user answer
         while True:
