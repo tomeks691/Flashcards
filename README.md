@@ -15,7 +15,7 @@ api_bot=<YOUR_TELEGRAM_BOT_API_TOKEN>
 chat_id=<YOUR_TELEGRAM_CHAT_ID>
 ```
 
-4. Create a file called `words.json` and add your flashcards as follows:
+4. Create a file called `your_wordlist_name.json` and add your flashcards as follows:
 
 ```
 [
@@ -29,7 +29,7 @@ chat_id=<YOUR_TELEGRAM_CHAT_ID>
 
 ## How it Works
 
-1. The bot randomly selects a flashcard from the list of flashcards you provide in `words.json`.
+1. The bot randomly selects a flashcard from the list of flashcards you provide in `your_wordlist_name.json`.
 2. The bot sends you a message with the foreign word you need to translate.
 3. You send a message to the bot with your translation.
 4. The bot checks your translation using OpenAI GPT-3 and sends you a response indicating whether your answer was correct or not.
