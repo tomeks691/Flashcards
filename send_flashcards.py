@@ -14,8 +14,6 @@ bot_chatID = os.environ.get("chat_id")
 # List of flashcards
 with open("words.json") as f:
     flashcards = json.load(f)
-
-print(type(flashcards))
 # Function for randomly selecting a flashcard to repeat
 def choose_flashcard():
     return random.choice(flashcards)
