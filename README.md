@@ -24,8 +24,8 @@ chat_id=<YOUR_TELEGRAM_CHAT_ID>
 ...
 ]
 ```
-
-5. Run the bot by running `python main.py`.
+5. Change wordlists in line 13 ```word_lists = {"1": "Time Travel"}``` to your own file wordlists.
+6. Run the bot by running `python main.py`.
 
 ## How it Works
 
