@@ -37,17 +37,15 @@ def repeat_flashcard(bot, chat_id, flashcard):
 def delete_learned_flashcards(wordlist, word):
     with open(f"{wordlist}.json", encoding="UTF-8") as f:
         flashcards = json.load(f)
-    #del flashcards[word]
+    del flashcards[word]
     with open(f"{wordlist}.json", "w", encoding="UTF-8") as f:
         json.dump(flashcards, f, indent=4, ensure_ascii=False)
-    if os.path.exists(f"{wordlist}_answered_correctly.json"):
-        with open(f"{wordlist}_answered_correctly.json", encoding="UTF-8") as f:
-            answered_flashcards = json.load(f)
-            print(f"Before modifying: {answered_flashcards}")
-        del answered_flashcards[word]
-        with open(f"{wordlist}_answered_correctly.json", "w", encoding="UTF-8") as f:
-            json.dump(answered_flashcards, f, indent=4, ensure_ascii=False)
-            print(f"After modifying: {answered_flashcards}")
+    with open(f"{wordlist}_answered_correctly.json", encoding="UTF-8") as f:
+        answered_flashcards = json.load(f)
+    del answered_flashcards[word]
+    with open(f"{wordlist}_answered_correctly.json", "w", encoding="UTF-8") as f:
+        f.write(json.dumps(answered_flashcards, indent=4, ensure_ascii=False))
+    return answered_flashcards
 
 
 # Function for add how many times you answer correctly.
@@ -56,7 +54,7 @@ def answer_correctly(wordlist, flashcard):
         answered_correctly = json.load(f)
     if flashcard in answered_correctly:
         if answered_correctly[flashcard] == 10:
-            delete_learned_flashcards(wordlist, flashcard)
+            answered_correctly = delete_learned_flashcards(wordlist, flashcard)
         else:
             answered_correctly[flashcard] += 1
     else:
