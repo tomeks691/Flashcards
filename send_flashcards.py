@@ -13,7 +13,7 @@ import os
 load_dotenv(find_dotenv())
 bot_token = os.environ.get("api_bot")
 bot_chatID = os.environ.get("chat_id")
-word_lists = {"1": "Time Travel"}
+word_lists = {"1": "Time_Travel"}
 
 
 def choose_flashcard(wordlist, bot):
@@ -23,27 +23,48 @@ def choose_flashcard(wordlist, bot):
         bot.sendMessage(bot_chatID, "Add some words to wordlist.")
         sys.exit()
     flashcard = random.choice(list(flashcards.keys()))
-    return flashcard, flashcards[flashcard]
-
-
+    return flashcard
 
 
 # Function for sending a flashcard to repeat via Telegram
-def repeat_flashcard(bot, chat_id, flashcard, translate_word):
+def repeat_flashcard(bot, chat_id, flashcard):
     message = f"Repeat the translation of the word: {flashcard}"
     bot.sendMessage(chat_id, message)
+
+
+# Nie dziala usuwanie klucza z answered_flashcards
+# Function for delete learned flashcards
+def delete_learned_flashcards(wordlist, word):
+    with open(f"{wordlist}.json", encoding="UTF-8") as f:
+        flashcards = json.load(f)
+    #del flashcards[word]
+    with open(f"{wordlist}.json", "w", encoding="UTF-8") as f:
+        json.dump(flashcards, f, indent=4, ensure_ascii=False)
+    if os.path.exists(f"{wordlist}_answered_correctly.json"):
+        with open(f"{wordlist}_answered_correctly.json", encoding="UTF-8") as f:
+            answered_flashcards = json.load(f)
+            print(f"Before modifying: {answered_flashcards}")
+        del answered_flashcards[word]
+        with open(f"{wordlist}_answered_correctly.json", "w", encoding="UTF-8") as f:
+            json.dump(answered_flashcards, f, indent=4, ensure_ascii=False)
+            print(f"After modifying: {answered_flashcards}")
+
 
 # Function for add how many times you answer correctly.
 def answer_correctly(wordlist, flashcard):
     with open(f"{wordlist}_answered_correctly.json", encoding="UTF-8") as f:
         answered_correctly = json.load(f)
     if flashcard in answered_correctly:
-        answered_correctly[flashcard] += 1
+        if answered_correctly[flashcard] == 10:
+            delete_learned_flashcards(wordlist, flashcard)
+        else:
+            answered_correctly[flashcard] += 1
     else:
         answered_correctly[flashcard] = 1
 
     with open(f"{wordlist}_answered_correctly.json", "w", encoding="UTF-8") as f:
         json.dump(answered_correctly, f, indent=4, ensure_ascii=False)
+
 
 # Function for checking the correctness of the answer and sending the appropriate message via Telegram
 def check_answer(bot, chat_id, flashcard, wordlist):
@@ -61,7 +82,6 @@ def check_answer(bot, chat_id, flashcard, wordlist):
         bot.sendMessage(chat_id, "Correct answer!")
     else:
         bot.sendMessage(chat_id, f"Incorrect answer. The correct answer is: \n {flashcards[flashcard]}")
-
 
 
 def choose_wordlist(bot):
@@ -96,8 +116,8 @@ def main():
     wordlist = word_lists[wordlists_key]
     while True:
         # Loop for repeating flashcards
-        flashcard, translate_word = choose_flashcard(wordlist, bot)
-        repeat_flashcard(bot, bot_chatID, flashcard, translate_word)
+        flashcard = choose_flashcard(wordlist, bot)
+        repeat_flashcard(bot, bot_chatID, flashcard)
         # Wait for user answer
         while True:
             if os.path.isfile('answer.txt'):
@@ -106,9 +126,46 @@ def main():
             else:
                 time.sleep(2)
                 continue
-        time.sleep(4)
-
+        time.sleep(2)
 
 
 if __name__ == '__main__':
     main()
+
+'''  "carefully": "ostrożnie",
+  "drawing room": "salon",
+  "completely correct": "całkowicie poprawne",
+  "dimensions": "wymiary",
+  "shook": "wstrząśnięty",
+  "We had all heard": "Wszyscy słyszeliśmy",
+  "enthusiastic": "entuzjastyczny",
+  "pale face": "blada twarz",
+  "argue": "kłócić się ",
+  "argumentative": "rzeczowy",
+  "red hair": "rude włosy",
+  "Ah": "Ach",
+  "historian": "historyk",
+  "would": "zrobiłbym",
+  "could": "mógł",
+  "Though": "Chociaż",
+  "delicate": "delikatny",
+  "fireplace": "kominek",
+  "The room was lit with lamp": "Pokój był oświetlony lampą",
+  "those": "te",
+  "white levers": "białe dźwignie",
+  "In a moment": "Za chwilę",
+  "disappear": "zniknąć",
+  "examine": "zbadać",
+  "hold out": "wytrzymać",
+  "breath of wind": "powiew wiatru",
+  "suddenly": "Nagle",
+  "became": "stał się",
+  "indistinct": "niewyraźny",
+  "gone": "stracony",
+  "vanished": "zniknął",
+  "remained": "pozostał",
+  "under": "pod ",
+  "convincing": "przekonujący",
+  "the common sense": "zdrowy rozsądek",
+  "lifting": "podnoszenie"
+'''
