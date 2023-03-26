@@ -32,7 +32,6 @@ def repeat_flashcard(bot, chat_id, flashcard):
     bot.sendMessage(chat_id, message)
 
 
-# Nie dziala usuwanie klucza z answered_flashcards
 # Function for delete learned flashcards
 def delete_learned_flashcards(wordlist, word):
     with open(f"{wordlist}.json", encoding="UTF-8") as f:
@@ -102,6 +101,8 @@ def choose_wordlist(bot):
             break
         else:
             print("This dictionary not exists! Choose again.")
+            os.remove("answer.txt")
+            time.sleep(1)
     os.remove("answer.txt")
     return answer
 
@@ -129,41 +130,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-'''  "carefully": "ostrożnie",
-  "drawing room": "salon",
-  "completely correct": "całkowicie poprawne",
-  "dimensions": "wymiary",
-  "shook": "wstrząśnięty",
-  "We had all heard": "Wszyscy słyszeliśmy",
-  "enthusiastic": "entuzjastyczny",
-  "pale face": "blada twarz",
-  "argue": "kłócić się ",
-  "argumentative": "rzeczowy",
-  "red hair": "rude włosy",
-  "Ah": "Ach",
-  "historian": "historyk",
-  "would": "zrobiłbym",
-  "could": "mógł",
-  "Though": "Chociaż",
-  "delicate": "delikatny",
-  "fireplace": "kominek",
-  "The room was lit with lamp": "Pokój był oświetlony lampą",
-  "those": "te",
-  "white levers": "białe dźwignie",
-  "In a moment": "Za chwilę",
-  "disappear": "zniknąć",
-  "examine": "zbadać",
-  "hold out": "wytrzymać",
-  "breath of wind": "powiew wiatru",
-  "suddenly": "Nagle",
-  "became": "stał się",
-  "indistinct": "niewyraźny",
-  "gone": "stracony",
-  "vanished": "zniknął",
-  "remained": "pozostał",
-  "under": "pod ",
-  "convincing": "przekonujący",
-  "the common sense": "zdrowy rozsądek",
-  "lifting": "podnoszenie"
-'''

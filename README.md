@@ -42,5 +42,4 @@ chat_id=<YOUR_TELEGRAM_CHAT_ID>
 - JSON file containing flashcards
 
 ## TO-DO
-- Remove words from flashcards
 - Create a PDF of words for studying
