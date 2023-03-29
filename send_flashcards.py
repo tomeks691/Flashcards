@@ -1,5 +1,4 @@
 import json
-import sys
 import time
 from dotenv import load_dotenv, find_dotenv
 import telepot
@@ -19,8 +18,7 @@ filename = "answer.json"
 def menu(bot, filename):
     menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Start Test", callback_data="0")],
-        [InlineKeyboardButton(text="New list of flashcards", callback_data="1")],
-        [InlineKeyboardButton(text="Exit", callback_data="2")]])
+        [InlineKeyboardButton(text="New list of flashcards", callback_data="1")]])
     bot.sendMessage(bot_chatID, "Which option do you wanna use?", reply_markup=menu_keyboard)
     while True:
         if os.path.isfile(filename):
@@ -40,7 +38,7 @@ def choose_flashcard(wordlist, bot):
     flashcards = flashcard.get_all_flashcards(wordlist)
     if len(flashcards) == 0:
         bot.sendMessage(bot_chatID, "Add some words to wordlist.")
-        sys.exit()
+        return False
     while True:
         flashcard = random.choice(flashcards)
         recently_used = check_if_recently_use(flashcard)
@@ -64,10 +62,9 @@ def check_answer(bot, chat_id, word, wordlist, filename):
         answer = json.load(f)
         answer = answer["text"]
         answer = answer.strip().lower()
-    if answer == "exit":
+    if answer == "back":
         os.remove(filename)
-        bot.sendMessage(chat_id, "The End")
-        sys.exit()
+        return False
     correctly_answer = flashcard.check_answer(wordlist, word, answer)
     if "str" not in str(type(correctly_answer)):
         os.remove(filename)
@@ -153,20 +150,23 @@ def main():
             while True:
                 # Loop for repeating flashcards
                 flashcard = choose_flashcard(wordlist, bot)
+                if flashcard == False:
+                    break
                 repeat_flashcard(bot, bot_chatID, flashcard)
                 # Wait for user answer
                 while True:
                     if os.path.isfile(filename):
-                        check_answer(bot, bot_chatID, flashcard, wordlist, filename)
+                        back = check_answer(bot, bot_chatID, flashcard, wordlist, filename)
                         break
                     else:
                         time.sleep(2)
                         continue
+                if back == False:
+                    break
                 time.sleep(2)
         elif choose == "1":
             choose_wordlist(bot, True, filename)
-        elif choose == "2":
-            sys.exit()
+
 
 
 if __name__ == '__main__':
