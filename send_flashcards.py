@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import json
 import sys
 import time
@@ -8,22 +5,53 @@ from dotenv import load_dotenv, find_dotenv
 import telepot
 import random
 import os
+import sqlite3
+from using_flashcards_db import Flashcard
+from telepot.namedtuple import InlineKeyboardButton, InlineKeyboardMarkup
 
 # Telegram bot settings
 load_dotenv(find_dotenv())
 bot_token = os.environ.get("api_bot")
 bot_chatID = os.environ.get("chat_id")
-word_lists = {"1": "Time_Travel"}
+recently_flashcard = []
+conn = sqlite3.connect("wordlists.db")
+cursor = conn.cursor()
+
+
+def menu(bot):
+    menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Start Test", callback_data="0")],
+        [InlineKeyboardButton(text="Add words to flashcards", callback_data="1")],
+        [InlineKeyboardButton(text="New list of flashcards", callback_data="2")],
+        [InlineKeyboardButton(text="Exit", callback_data="3")]])
+    bot.sendMessage(bot_chatID, "Which option do you wanna use?", reply_markup=menu_keyboard)
+    while True:
+        if os.path.isfile('answer.json'):
+            with open("answer.json") as f:
+                answer = json.load(f)
+            answer = answer["data"]
+            break
+        else:
+            time.sleep(2)
+            continue
+    os.remove("answer.json")
+    return answer
 
 
 def choose_flashcard(wordlist, bot):
-    with open(f"{wordlist}.json", encoding="UTF-8") as f:
-        flashcards = json.load(f)
+    flashcard = Flashcard()
+    flashcards = flashcard.get_all_flashcards(wordlist)
     if len(flashcards) == 0:
         bot.sendMessage(bot_chatID, "Add some words to wordlist.")
         sys.exit()
-    flashcard = random.choice(list(flashcards.keys()))
-    return flashcard
+    while True:
+        flashcard = random.choice(flashcards)
+        recently_used = check_if_recently_use(flashcard)
+        if recently_used:
+            continue
+        else:
+            break
+    return flashcard[0]
 
 
 # Function for sending a flashcard to repeat via Telegram
@@ -32,100 +60,154 @@ def repeat_flashcard(bot, chat_id, flashcard):
     bot.sendMessage(chat_id, message)
 
 
-# Function for delete learned flashcards
-def delete_learned_flashcards(wordlist, word):
-    with open(f"{wordlist}.json", encoding="UTF-8") as f:
-        flashcards = json.load(f)
-    del flashcards[word]
-    with open(f"{wordlist}.json", "w", encoding="UTF-8") as f:
-        json.dump(flashcards, f, indent=4, ensure_ascii=False)
-    with open(f"{wordlist}_answered_correctly.json", encoding="UTF-8") as f:
-        answered_flashcards = json.load(f)
-    del answered_flashcards[word]
-    with open(f"{wordlist}_answered_correctly.json", "w", encoding="UTF-8") as f:
-        f.write(json.dumps(answered_flashcards, indent=4, ensure_ascii=False))
-    return answered_flashcards
-
-
-# Function for add how many times you answer correctly.
-def answer_correctly(wordlist, flashcard):
-    with open(f"{wordlist}_answered_correctly.json", encoding="UTF-8") as f:
-        answered_correctly = json.load(f)
-    if flashcard in answered_correctly:
-        if answered_correctly[flashcard] == 10:
-            answered_correctly = delete_learned_flashcards(wordlist, flashcard)
-        else:
-            answered_correctly[flashcard] += 1
-    else:
-        answered_correctly[flashcard] = 1
-
-    with open(f"{wordlist}_answered_correctly.json", "w", encoding="UTF-8") as f:
-        json.dump(answered_correctly, f, indent=4, ensure_ascii=False)
-
-
 # Function for checking the correctness of the answer and sending the appropriate message via Telegram
-def check_answer(bot, chat_id, flashcard, wordlist):
-    with open(f"{wordlist}.json", encoding="UTF-8") as f:
-        flashcards = json.load(f)
-    with open("answer.txt", encoding="UTF-8") as f:
-        answer = f.read().strip().lower()
-    if answer.lower() == "exit":
-        os.remove("answer.txt")
+def check_answer(bot, chat_id, word, wordlist):
+    flashcard = Flashcard()
+    with open("answer.json", encoding="UTF-8") as f:
+        answer = json.load(f)
+        answer = answer["text"]
+        answer = answer.strip().lower()
+    if answer == "exit":
+        os.remove("answer.json")
         bot.sendMessage(chat_id, "The End")
         sys.exit()
-    if flashcards[flashcard].strip().lower() == answer:
-        answer_correctly(wordlist, flashcard)
-        os.remove("answer.txt")
+    correctly_answer = flashcard.check_answer(wordlist, word, answer)
+    if "str" not in str(type(correctly_answer)):
+        os.remove("answer.json")
         bot.sendMessage(chat_id, "Correct answer!")
     else:
-        bot.sendMessage(chat_id, f"Incorrect answer. The correct answer is: \n {flashcards[flashcard]}")
+        bot.sendMessage(chat_id, f"Incorrect answer. The correct answer is: {correctly_answer}")
+        os.remove("answer.json")
 
 
-def choose_wordlist(bot):
+def check_if_recently_use(flashcard):
+    if len(recently_flashcard) == 10:
+        del recently_flashcard[0]
+    if flashcard in recently_flashcard:
+        return True
+    else:
+        recently_flashcard.append(flashcard)
+        return False
+
+
+def choose_wordlist(bot, create):
+    wordlists = get_wordlists_name()
+    buttons = []
+    if wordlists == 0 or create:
+        create_wordlist(bot)
+        bot.sendMessage(bot_chatID, "A new list of flashcards has been created")
+        return True
+    for len_keys in wordlists.keys():
+        buttons.append([InlineKeyboardButton(text=wordlists[len_keys], callback_data=len_keys)])
+    keyboard_wordlist = InlineKeyboardMarkup(inline_keyboard=buttons)
+    bot.sendMessage(bot_chatID, "Which word list do you wanna use?", reply_markup=keyboard_wordlist)
     while True:
-        bot.sendMessage(bot_chatID, "Which word list do you wanna use?")
-        msg = ""
-        for option, wordlist in word_lists.items():
-            msg += f"{option}: {wordlist}\n"
-        bot.sendMessage(bot_chatID, msg)
-        while True:
-            if os.path.isfile('answer.txt'):
-                with open("answer.txt") as f:
-                    answer = f.read()
+        if os.path.isfile('answer.json'):
+            with open("answer.json") as f:
+                answer = json.load(f)
+            answer = answer["data"]
+            break
+        else:
+            time.sleep(2)
+            continue
+    os.remove("answer.json")
+    return wordlists[answer]
 
+
+def create_wordlist(bot):
+    bot.sendMessage(bot_chatID, "How do you wanna name your flashcards wordlist?")
+    while True:
+        if os.path.isfile('answer.json'):
+            with open("answer.json") as f:
+                answer = json.load(f)
+            answer = answer["text"]
+            break
+        else:
+            time.sleep(2)
+            continue
+    os.remove("answer.json")
+    flashcard = Flashcard()
+    flashcard.create_wordlist(answer)
+
+
+# Add new flashcard
+def add_flashcard(bot, wordlist):
+    while True:
+        bot.sendMessage(bot_chatID, f"Please enter the words into the {wordlist} flashcard:")
+        while True:
+            if os.path.isfile('answer.json'):
+                with open("answer.json", encoding="UTF-8") as f:
+                    choice = json.load(f)
+                    choice = choice["text"]
                 break
             else:
                 time.sleep(2)
                 continue
-        if word_lists.get(answer) is not None:
+        os.remove("answer.json")
+        flashcard = Flashcard()
+        flashcard.add_new_flashcard(choice, wordlist)
+        keyboard_option = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Add next word", callback_data="0")],
+            [InlineKeyboardButton(text="Exit", callback_data="1")]])
+        msg = f"The word {choice} has been written to the {wordlist}flashcard \n Do you want to add another word or do you want to finish?"
+        bot.sendMessage(bot_chatID, msg, reply_markup=keyboard_option)
+        while True:
+            if os.path.isfile('answer.json'):
+                with open("answer.json", encoding="UTF-8") as f:
+                    choice = json.load(f)
+                    choice = choice["data"]
+                break
+            else:
+                time.sleep(2)
+                continue
+        os.remove("answer.json")
+        if choice == "0":
+            continue
+        if choice == "1":
             break
-        else:
-            print("This dictionary not exists! Choose again.")
-            os.remove("answer.txt")
-            time.sleep(1)
-    os.remove("answer.txt")
-    return answer
+
+
+
+def get_wordlists_name():
+    flashcard = Flashcard()
+    table_names = {}
+    flashcards_tables = flashcard.get_all_tables()
+    for tables in flashcards_tables:
+        for table in tables:
+            table_names[str(flashcards_tables.index(tables))] = table
+    return table_names
 
 
 # Main program loop
 def main():
+    if os.path.exists("answer.json"):
+        os.remove("answer.json")
     # Create a Telepot bot object
     bot = telepot.Bot(bot_token)
-    wordlists_key = choose_wordlist(bot)
-    wordlist = word_lists[wordlists_key]
     while True:
-        # Loop for repeating flashcards
-        flashcard = choose_flashcard(wordlist, bot)
-        repeat_flashcard(bot, bot_chatID, flashcard)
-        # Wait for user answer
-        while True:
-            if os.path.isfile('answer.txt'):
-                check_answer(bot, bot_chatID, flashcard, wordlist)
-                break
-            else:
+        choose = menu(bot)
+        if choose == "0":
+            wordlist = choose_wordlist(bot, False)
+            while True:
+                # Loop for repeating flashcards
+                flashcard = choose_flashcard(wordlist, bot)
+                repeat_flashcard(bot, bot_chatID, flashcard)
+                # Wait for user answer
+                while True:
+                    if os.path.isfile('answer.json'):
+                        check_answer(bot, bot_chatID, flashcard, wordlist)
+                        break
+                    else:
+                        time.sleep(2)
+                        continue
                 time.sleep(2)
-                continue
-        time.sleep(2)
+        elif choose == "1":
+            wordlist = choose_wordlist(bot, False)
+            add_flashcard(bot, wordlist)
+        elif choose == "2":
+            choose_wordlist(bot, True)
+        elif choose == "3":
+            sys.exit()
 
 
 if __name__ == '__main__':
