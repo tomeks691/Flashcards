@@ -15,6 +15,7 @@ def add_flashcard(bot, wordlist):
             if os.path.isfile(filename):
                 with open(filename, encoding="UTF-8") as f:
                     choice = json.load(f)
+                    print(choice)
                     choice = choice["text"]
                 break
             else:
