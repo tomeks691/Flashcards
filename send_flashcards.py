@@ -15,11 +15,20 @@ recently_flashcard = []
 filename = "answer.json"
 
 
-def menu(bot, filename):
+def menu(filename):
     menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Start Test", callback_data="0")],
-        [InlineKeyboardButton(text="New list of flashcards", callback_data="1")]])
-    bot.sendMessage(bot_chatID, "Which option do you wanna use?", reply_markup=menu_keyboard)
+        [InlineKeyboardButton(text="New list of flashcards", callback_data="1")],
+        [InlineKeyboardButton(text="Learn FLashcards", callback_data="2")]])
+    while True:
+        try:
+            bot = telepot.Bot(bot_token)
+            bot.sendMessage(bot_chatID, "Which option do you wanna use?", reply_markup=menu_keyboard)
+            break
+        except:
+            time.sleep(1)
+            continue
+
     while True:
         if os.path.isfile(filename):
             with open(filename) as f:
@@ -33,11 +42,49 @@ def menu(bot, filename):
     return answer
 
 
-def choose_flashcard(wordlist, bot):
+def learn_flashcard(wordlist):
+    while True:
+        flashcard = choose_flashcard(wordlist)
+        while True:
+            try:
+                bot = telepot.Bot(bot_token)
+                bot.sendMessage(bot_chatID, f"{flashcard[0]}: {flashcard[1]}")
+                break
+            except:
+                time.sleep(1)
+                continue
+        learn_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Next", callback_data="0")],
+            [InlineKeyboardButton(text="Menu", callback_data="1")]])
+        bot.sendMessage(bot_chatID, "Next Flashcard or back to the menu:", reply_markup=learn_keyboard)
+        while True:
+            if os.path.isfile(filename):
+                with open(filename) as f:
+                    answer = json.load(f)
+                answer = answer["data"]
+                break
+            else:
+                time.sleep(2)
+                continue
+        os.remove(filename)
+        if answer == "0":
+            continue
+        elif answer == "1":
+            break
+
+
+def choose_flashcard(wordlist):
     flashcard = Flashcard()
     flashcards = flashcard.get_all_flashcards(wordlist)
     if len(flashcards) == 0:
-        bot.sendMessage(bot_chatID, "Add some words to wordlist.")
+        while True:
+            try:
+                bot = telepot.Bot(bot_token)
+                bot.sendMessage(bot_chatID, "Add some words to wordlist.")
+                break
+            except:
+                time.sleep(1)
+                continue
         return False
     while True:
         flashcard = random.choice(flashcards)
@@ -46,17 +93,24 @@ def choose_flashcard(wordlist, bot):
             continue
         else:
             break
-    return flashcard[0]
+    return flashcard
 
 
 # Function for sending a flashcard to repeat via Telegram
-def repeat_flashcard(bot, chat_id, flashcard):
+def repeat_flashcard(chat_id, flashcard):
     message = f"Repeat the translation of the word: {flashcard}"
-    bot.sendMessage(chat_id, message)
+    while True:
+        try:
+            bot = telepot.Bot(bot_token)
+            bot.sendMessage(chat_id, message)
+            break
+        except:
+            time.sleep(1)
+            continue
 
 
 # Function for checking the correctness of the answer and sending the appropriate message via Telegram
-def check_answer(bot, chat_id, word, wordlist, filename):
+def check_answer(chat_id, word, wordlist, filename):
     flashcard = Flashcard()
     with open(filename) as f:
         answer = json.load(f)
@@ -68,9 +122,24 @@ def check_answer(bot, chat_id, word, wordlist, filename):
     correctly_answer = flashcard.check_answer(wordlist, word, answer)
     if "str" not in str(type(correctly_answer)):
         os.remove(filename)
-        bot.sendMessage(chat_id, "Correct answer!")
+        while True:
+            try:
+                bot = telepot.Bot(bot_token)
+                bot.sendMessage(chat_id, "Correct answer!")
+                break
+            except:
+                time.sleep(1)
+                continue
+
     else:
-        bot.sendMessage(chat_id, f"Incorrect answer. The correct answer is: {correctly_answer}")
+        while True:
+            try:
+                bot = telepot.Bot(bot_token)
+                bot.sendMessage(chat_id, f"Incorrect answer. The correct answer is: {correctly_answer}")
+                break
+            except:
+                time.sleep(1)
+                continue
         os.remove(filename)
 
 
@@ -84,17 +153,31 @@ def check_if_recently_use(flashcard):
         return False
 
 
-def choose_wordlist(bot, create, filename):
+def choose_wordlist(create, filename):
     wordlists = get_wordlists_name()
     buttons = []
     if wordlists == 0 or create:
-        create_wordlist(bot, filename)
-        bot.sendMessage(bot_chatID, "A new list of flashcards has been created")
+        create_wordlist(filename)
+        while True:
+            try:
+                bot = telepot.Bot(bot_token)
+                bot.sendMessage(bot_chatID, "A new list of flashcards has been created")
+                break
+            except:
+                time.sleep(1)
+                continue
         return True
     for len_keys in wordlists.keys():
         buttons.append([InlineKeyboardButton(text=wordlists[len_keys], callback_data=len_keys)])
     keyboard_wordlist = InlineKeyboardMarkup(inline_keyboard=buttons)
-    bot.sendMessage(bot_chatID, "Which word list do you wanna use?", reply_markup=keyboard_wordlist)
+    while True:
+        try:
+            bot = telepot.Bot(bot_token)
+            bot.sendMessage(bot_chatID, "Which word list do you wanna use?", reply_markup=keyboard_wordlist)
+            break
+        except:
+            time.sleep(1)
+            continue
     while True:
         if os.path.isfile(filename):
             with open(filename) as f:
@@ -108,8 +191,16 @@ def choose_wordlist(bot, create, filename):
     return wordlists[answer]
 
 
-def create_wordlist(bot, filename):
-    bot.sendMessage(bot_chatID, "How do you wanna name your flashcards wordlist?")
+def create_wordlist(filename):
+    while True:
+        try:
+            bot = telepot.Bot(bot_token)
+            bot.sendMessage(bot_chatID, "How do you wanna name your flashcards wordlist?")
+            break
+        except:
+            time.sleep(1)
+            continue
+
     while True:
         if os.path.isfile(filename):
             with open(filename) as f:
@@ -141,22 +232,21 @@ def get_wordlists_name():
 def main():
     if os.path.exists(filename):
         os.remove(filename)
-    # Create a Telepot bot object
-    bot = telepot.Bot(bot_token)
+    i = 0
     while True:
-        choose = menu(bot, filename)
+        choose = menu(filename)
         if choose == "0":
-            wordlist = choose_wordlist(bot, False, filename)
+            wordlist = choose_wordlist(False, filename)
             while True:
                 # Loop for repeating flashcards
-                flashcard = choose_flashcard(wordlist, bot)
+                flashcard = choose_flashcard(wordlist)[0]
                 if flashcard == False:
                     break
-                repeat_flashcard(bot, bot_chatID, flashcard)
+                repeat_flashcard(bot_chatID, flashcard)
                 # Wait for user answer
                 while True:
                     if os.path.isfile(filename):
-                        back = check_answer(bot, bot_chatID, flashcard, wordlist, filename)
+                        back = check_answer(bot_chatID, flashcard, wordlist, filename)
                         break
                     else:
                         time.sleep(2)
@@ -165,8 +255,11 @@ def main():
                     break
                 time.sleep(2)
         elif choose == "1":
-            choose_wordlist(bot, True, filename)
-
+            choose_wordlist(True, filename)
+        elif choose == "2":
+            wordlist = choose_wordlist(False, filename)
+            learn_flashcard(wordlist)
+        time.sleep(1)
 
 
 if __name__ == '__main__':

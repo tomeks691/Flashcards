@@ -8,14 +8,20 @@ from telepot.namedtuple import InlineKeyboardButton, InlineKeyboardMarkup
 from send_flashcards import choose_wordlist
 
 
-def add_flashcard(bot, wordlist):
+def add_flashcard(wordlist):
     while True:
-        bot.sendMessage(bot_chatID, f"Please enter the words into the {wordlist} flashcard:")
+        while True:
+            try:
+                bot = telepot.Bot(bot_token)
+                bot.sendMessage(bot_chatID, f"Please enter the words into the {wordlist} flashcard:")
+                break
+            except:
+                time.sleep(1)
+                continue
         while True:
             if os.path.isfile(filename):
                 with open(filename, encoding="UTF-8") as f:
                     choice = json.load(f)
-                    print(choice)
                     choice = choice["text"]
                 break
             else:
@@ -28,7 +34,14 @@ def add_flashcard(bot, wordlist):
             [InlineKeyboardButton(text="Add next word", callback_data="0")],
             [InlineKeyboardButton(text="Exit", callback_data="1")]])
         msg = f"The word {choice} has been written to the {wordlist}flashcard \n Do you want to add another word or do you want to finish?"
-        bot.sendMessage(bot_chatID, msg, reply_markup=keyboard_option)
+        while True:
+            try:
+                bot = telepot.Bot(bot_token)
+                bot.sendMessage(bot_chatID, msg, reply_markup=keyboard_option)
+                break
+            except:
+                time.sleep(1)
+                continue
         while True:
             if os.path.isfile(filename):
                 with open(filename, encoding="UTF-8") as f:
@@ -48,8 +61,7 @@ def add_flashcard(bot, wordlist):
 def main():
     if os.path.exists(filename):
         os.remove(filename)
-    bot = telepot.Bot(bot_token)
-    add_flashcard(bot, choose_wordlist(bot, False, filename))
+    add_flashcard(choose_wordlist(False, filename))
 
 
 load_dotenv(find_dotenv())
